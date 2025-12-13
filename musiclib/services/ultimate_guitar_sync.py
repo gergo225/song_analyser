@@ -9,6 +9,7 @@ from ..db_utils import init_db
 from ..extensions import db
 from ..models import Artist, CachedAnalyticsMetadata, ChordLine, Song
 from ..scrapers.ultimate_guitar import UltimateGuitarScraper
+from .chord_analytics import compute_and_cache_overall_analytics
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +27,7 @@ def scrape_taylor_swift_chords_to_db(
     sleep_seconds: float = 1.0,
     force: bool = False,
     commit_every: int = 25,
+    compute_analytics: bool = True,
 ) -> UltimateGuitarScrapeResult:
     init_db()
     scraper = UltimateGuitarScraper(sleep_seconds=sleep_seconds)
@@ -93,6 +95,9 @@ def scrape_taylor_swift_chords_to_db(
             db.session.commit()
 
     db.session.commit()
+    
+    if compute_analytics and updated_songs > 0:
+        compute_and_cache_overall_analytics(force=True, commit=True)
 
     return UltimateGuitarScrapeResult(
         seen_tabs=seen_tabs,
