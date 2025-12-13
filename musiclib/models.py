@@ -60,6 +60,13 @@ class Song(db.Model):
 
     title = db.Column(db.String(255), nullable=False, index=True)
     track_number = db.Column(db.Integer, nullable=True)
+
+    source = db.Column(db.String(50), nullable=True, index=True)
+    source_url = db.Column(db.String(1024), nullable=True, index=True)
+    tab_type = db.Column(db.String(50), nullable=True, index=True)
+    raw_tab = db.Column(db.Text, nullable=True)
+    last_scraped_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
     created_at = db.Column(
         db.DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -85,7 +92,12 @@ class ChordLine(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    song_id = db.Column(db.Integer, db.ForeignKey("songs.id"), nullable=False, index=True)
+    song_id = db.Column(
+        db.Integer,
+        db.ForeignKey("songs.id"),
+        nullable=False,
+        index=True,
+    )
     line_number = db.Column(db.Integer, nullable=False)
     content = db.Column(db.Text, nullable=False)
 
@@ -96,7 +108,10 @@ class ChordLine(db.Model):
     song = db.relationship("Song", back_populates="chord_lines")
 
     def __repr__(self) -> str:
-        return f"<ChordLine id={self.id} song_id={self.song_id} line={self.line_number}>"
+        return (
+            f"<ChordLine id={self.id} song_id={self.song_id} "
+            f"line={self.line_number}>"
+        )
 
 
 class CachedAnalyticsMetadata(db.Model):
@@ -121,13 +136,17 @@ class CachedAnalyticsMetadata(db.Model):
         db.DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at = db.Column(
-        db.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
     def __repr__(self) -> str:
+        subject = f"{self.subject_type}:{self.subject_id}"
         return (
-            f"<CachedAnalyticsMetadata id={self.id} subject={self.subject_type}:{self.subject_id} "
-            f"metric={self.metric!r}>"
+            f"<CachedAnalyticsMetadata id={self.id} "
+            f"subject={subject} metric={self.metric!r}>"
         )
 
     @property
