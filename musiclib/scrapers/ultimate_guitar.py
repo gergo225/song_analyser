@@ -286,10 +286,10 @@ def _normalize_chord_symbol(symbol: str) -> str:
     rest = rest.strip()
     rest_lower = rest.lower()
 
-    if rest_lower.startswith("min"):
-        rest = "m" + rest[3:]
-    elif rest_lower.startswith("minor"):
+    if rest_lower.startswith("minor"):
         rest = "m" + rest[5:]
+    elif rest_lower.startswith("min"):
+        rest = "m" + rest[3:]
     elif rest.startswith("-"):
         rest = "m" + rest[1:]
     elif rest.startswith("M") and (len(rest) == 1 or rest[1].isdigit()):
