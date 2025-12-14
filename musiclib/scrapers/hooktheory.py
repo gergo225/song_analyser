@@ -7,16 +7,15 @@ from typing import NamedTuple
 
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from ..extensions import db
-from ..models import Artist, ChordLine, Song
+from ..models import Artist, CachedAnalyticsMetadata, ChordLine, Song
 
 
 class SongData(NamedTuple):
@@ -247,23 +246,46 @@ class HooktheoryScraper:
         return key
 
     def _extract_roman_numerals(self, soup: BeautifulSoup) -> list[str]:
-        roman_numerals = []
-        
-        svg_texts = soup.find_all("text")
-        for text_elem in svg_texts:
-            tspans = text_elem.find_all("tspan", class_="times")
-            for tspan in tspans:
-                numeral = tspan.get_text(strip=True)
-                if numeral and self._is_valid_roman_numeral(numeral):
+        roman_numerals: list[str] = []
+
+        def extract_concatenated_times_text(container: Tag) -> str:
+            parts: list[str] = []
+            for tspan in container.find_all("tspan", class_="times"):
+                text = tspan.get_text(strip=True)
+                if text:
+                    parts.append(text)
+
+            numeral = "".join(parts).replace("\u200b", "").strip()
+            if numeral and self._is_valid_roman_numeral(numeral):
+                return numeral
+            return ""
+
+        chord_label_groups = soup.find_all(
+            "g",
+            attrs={"data-type": re.compile(r"^chord-label-rel-")},
+        )
+        if chord_label_groups:
+            for group in chord_label_groups:
+                numeral = extract_concatenated_times_text(group)
+                if numeral:
                     roman_numerals.append(numeral)
-        
-        if not roman_numerals:
-            all_tspans = soup.find_all("tspan", class_="times")
-            for tspan in all_tspans:
-                numeral = tspan.get_text(strip=True)
-                if numeral and self._is_valid_roman_numeral(numeral):
-                    roman_numerals.append(numeral)
-        
+            if roman_numerals:
+                return roman_numerals
+
+        for text_elem in soup.find_all("text"):
+            numeral = extract_concatenated_times_text(text_elem)
+            if numeral:
+                roman_numerals.append(numeral)
+
+        if roman_numerals:
+            return roman_numerals
+
+        # Last-resort fallback: treat individual tspans as numerals.
+        for tspan in soup.find_all("tspan", class_="times"):
+            numeral = tspan.get_text(strip=True)
+            if numeral and self._is_valid_roman_numeral(numeral):
+                roman_numerals.append(numeral)
+
         return roman_numerals
 
     def _is_valid_roman_numeral(self, text: str) -> bool:
@@ -347,7 +369,24 @@ class HooktheoryScraper:
                 
                 print(f"  Created new song (ID: {song.id})")
                 stats["created"] += 1
-            
+
+            CachedAnalyticsMetadata.query.filter_by(
+                subject_type="song",
+                subject_id=song.id,
+                metric="chord_analytics.song",
+            ).delete()
+            CachedAnalyticsMetadata.query.filter_by(
+                subject_type="global",
+                subject_id=0,
+                metric="chord_analytics.overall",
+            ).delete()
+            if song.album_id is not None:
+                CachedAnalyticsMetadata.query.filter_by(
+                    subject_type="album",
+                    subject_id=song.album_id,
+                    metric="chord_analytics.album",
+                ).delete()
+
             for line_num, numeral in enumerate(song_data.roman_numerals, 1):
                 chord_line = ChordLine(
                     song_id=song.id,

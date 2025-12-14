@@ -1,13 +1,42 @@
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timezone
+
+from bs4 import BeautifulSoup
 
 from musiclib import create_app
 from musiclib.extensions import db
 from musiclib.models import Artist, ChordLine, Song
+from musiclib.scrapers.hooktheory import HooktheoryScraper
 
 app = create_app()
+
+
+def test_hooktheory_roman_numeral_extraction_concatenates_tspans() -> None:
+    scraper = HooktheoryScraper(use_selenium=False)
+
+    html = """
+    <svg>
+      <g data-type="chord-label-rel-490000572-">
+        <text>
+          <tspan class="times">v</tspan>
+          <tspan class="times">i</tspan>
+        </text>
+      </g>
+      <g data-type="chord-label-rel-490000573-">
+        <text>
+          <tspan class="times">v</tspan>
+          <tspan class="times">i</tspan>
+          <tspan class="times">i</tspan>
+        </text>
+      </g>
+    </svg>
+    """
+
+    soup = BeautifulSoup(html, "lxml")
+    numerals = scraper._extract_roman_numerals(soup)
+
+    assert numerals == ["vi", "vii"], numerals
 
 
 def test_hooktheory_data_storage() -> None:
@@ -152,4 +181,5 @@ def test_hooktheory_data_storage() -> None:
 
 
 if __name__ == "__main__":
+    test_hooktheory_roman_numeral_extraction_concatenates_tspans()
     test_hooktheory_data_storage()
