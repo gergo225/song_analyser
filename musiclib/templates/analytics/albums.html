@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% from 'analytics/_components.html' import datetime_text %}
+
+{% block title %}Albums · Analytics{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <h1>Albums</h1>
+    <div class="muted">Album-level analytics rollups and links to per-song drilldowns.</div>
+  </div>
+
+  <table class="data-table sortable">
+    <thead>
+      <tr>
+        <th class="num">ID</th>
+        <th>Artist</th>
+        <th>Album</th>
+        <th class="num">Year</th>
+        <th class="num">Songs</th>
+        <th class="num">Analyzed</th>
+        <th class="num">Unique chords</th>
+        <th class="num">Progressions</th>
+        <th>Computed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in album_rows %}
+        <tr>
+          <td class="num" data-sort="{{ row.album.id }}">{{ row.album.id }}</td>
+          <td>{{ row.artist.name if row.artist else '—' }}</td>
+          <td>
+            <a href="{{ url_for('analytics.album_detail', album_id=row.album.id) }}">{{ row.album.title }}</a>
+          </td>
+          <td class="num" data-sort="{{ row.album.release_year or 0 }}">{{ row.album.release_year or '—' }}</td>
+          <td class="num" data-sort="{{ row.songs_total }}">{{ row.songs_total }}</td>
+          <td class="num" data-sort="{{ row.songs_analyzed }}">
+            {% if row.has_analytics %}{{ row.songs_analyzed }}{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td class="num" data-sort="{{ row.unique_chords }}">
+            {% if row.has_analytics %}{{ row.unique_chords }}{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td class="num" data-sort="{{ row.progressions_found }}">
+            {% if row.has_analytics %}{{ row.progressions_found }}{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if row.has_analytics %}
+              {{ datetime_text(row.computed_at) }}
+            {% else %}
+              <span class="badge">not computed</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if not album_rows %}
+    <div class="notice" style="margin-top: 16px">
+      No albums found. Scrape or load songs first.
+    </div>
+  {% endif %}
+{% endblock %}

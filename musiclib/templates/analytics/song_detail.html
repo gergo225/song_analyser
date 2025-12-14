@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% from 'analytics/_components.html' import bar_table, datetime_text %}
+
+{% block title %}{{ song.title }} · Song analytics{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <div class="muted">
+        {% if album %}
+          <a href="{{ url_for('analytics.album_detail', album_id=album.id) }}">{{ album.title }}</a> /
+        {% else %}
+          <a href="{{ url_for('analytics.albums') }}">Albums</a> /
+        {% endif %}
+      </div>
+      <h1>{{ song.title }}</h1>
+      <div class="muted">
+        {{ artist.name if artist else '—' }}
+        {% if computed_at %}· computed {{ datetime_text(computed_at) }}{% endif %}
+      </div>
+      {% if song.source_url %}
+        <div class="muted" style="margin-top: 4px">
+          Source: <a href="{{ song.source_url }}" target="_blank" rel="noreferrer">{{ song.source_url }}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if analysis %}
+    <div class="kpi-grid">
+      <div class="card">
+        <div class="kpi-label">Progressions (lines)</div>
+        <div class="kpi-value">{{ analysis.progressions|length }}</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Unique chords</div>
+        <div class="kpi-value">{{ analysis.unique_chords|length }}</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Chord occurrences</div>
+        <div class="kpi-value">{{ analysis.chord_frequency.values()|sum }}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h2>Chord frequency</h2>
+        {{ bar_table(chord_items, 'Chord') }}
+      </div>
+      <div>
+        <h2>Most common progressions (within this song)</h2>
+        {{ bar_table(progression_items, 'Progression') }}
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Progressions by line</h2>
+      <table class="data-table sortable">
+        <thead>
+          <tr>
+            <th class="num">Line</th>
+            <th>Progression</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in progressions_by_line %}
+            <tr>
+              <td class="num" data-sort="{{ row.line_number }}">{{ row.line_number }}</td>
+              <td class="wrap"><span class="mono">{{ row.progression }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="notice">
+      <div><strong>No cached song analytics found.</strong></div>
+      <div class="muted" style="margin-top: 6px">
+        Run <code>python app.py compute-chord-analytics --song {{ song.id }}</code>.
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

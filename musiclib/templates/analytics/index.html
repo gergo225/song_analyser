@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% from 'analytics/_components.html' import bar_table, datetime_text %}
+
+{% block title %}Analytics overview{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <h1>Analytics</h1>
+    <div class="muted">Cached chord analytics from SQLite.</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="card">
+      <div class="kpi-label">Artists</div>
+      <div class="kpi-value">{{ counts.artists }}</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Albums</div>
+      <div class="kpi-value">{{ counts.albums }}</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label">Songs</div>
+      <div class="kpi-value">{{ counts.songs }}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title-row">
+      <h2>Overall</h2>
+      <a class="btn" href="{{ url_for('analytics.albums') }}">Browse albums</a>
+    </div>
+
+    {% if overall_summary %}
+      <div class="kpi-grid">
+        <div class="card">
+          <div class="kpi-label">Songs analyzed</div>
+          <div class="kpi-value">{{ overall_summary.songs_analyzed }}</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Progressions found</div>
+          <div class="kpi-value">{{ overall_summary.progressions_found }}</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Unique chords</div>
+          <div class="kpi-value">{{ overall_summary.unique_chords }}</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Computed at</div>
+          <div class="kpi-value kpi-small">{{ datetime_text(overall_summary.computed_at) }}</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3>Most common chords</h3>
+          {{ bar_table(overall_top_chords, 'Chord') }}
+        </div>
+        <div>
+          <h3>Most common progressions</h3>
+          {{ bar_table(overall_top_progressions, 'Progression') }}
+        </div>
+      </div>
+    {% else %}
+      <div class="notice">
+        <div><strong>No cached overall analytics found.</strong></div>
+        <div class="muted" style="margin-top: 6px">
+          Run <code>python app.py compute-chord-analytics --overall</code> (or scrape with analytics enabled)
+          to populate the cache.
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

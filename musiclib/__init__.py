@@ -34,6 +34,10 @@ def create_app(config_object: type[Config] | str | None = None) -> Flask:
 
     register_cli(app)
 
+    from .web.analytics import analytics_bp
+
+    app.register_blueprint(analytics_bp)
+
     @app.get("/")
     def index() -> dict[str, Any]:
         return {
