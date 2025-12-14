@@ -8,6 +8,7 @@ from typing import NamedTuple
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from lxml import html
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -196,6 +197,21 @@ class HooktheoryScraper:
         return ""
 
     def _extract_key(self, soup: BeautifulSoup) -> str:
+        # Check using the specific XPath provided (handling variable tab-ID)
+        try:
+            tree = html.fromstring(str(soup))
+            # The xpath provided: //*[@id="tab-951274"]/div/div[2]/div/div[2]/div[1]/div/div/div[1]/div/div[1]/span
+            xpath_query = "//*[starts-with(@id, 'tab-')]/div/div[2]/div/div[2]/div[1]/div/div/div[1]/div/div[1]/span"
+            elements = tree.xpath(xpath_query)
+            if elements:
+                key_text = elements[0].text_content()
+                if key_text:
+                    normalized = self._normalize_key(key_text)
+                    if normalized:
+                        return normalized
+        except Exception as e:
+            print(f"Warning: Error using XPath for key extraction: {e}")
+
         # Check the specific tab-controls structure first (bug fix)
         tab_controls = soup.find("div", class_="tab-controls")
         if tab_controls:
