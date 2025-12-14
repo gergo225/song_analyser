@@ -104,9 +104,61 @@ The application will start on `http://127.0.0.1:5000` by default.
 
 ## Data Ingestion
 
-### Scrape Taylor Swift Tabs
+### Scrape from Hooktheory (Roman Numerals)
 
-The application includes a built-in scraper for Taylor Swift chord tabs from UltimateGuitar:
+The application includes a scraper for Taylor Swift songs from Hooktheory with Roman numeral chord progressions:
+
+```bash
+# Basic scrape (respects 2s rate limit)
+python app.py scrape-hooktheory-taylor-swift
+
+# Limit number of songs
+python app.py scrape-hooktheory-taylor-swift --limit 10
+
+# Adjust rate limiting (seconds between requests)
+python app.py scrape-hooktheory-taylor-swift --sleep 3.0
+
+# Force re-scrape existing songs
+python app.py scrape-hooktheory-taylor-swift --force
+
+# Combine options
+python app.py scrape-hooktheory-taylor-swift --limit 50 --sleep 2.0
+```
+
+**Expected Output:**
+```
+Starting Hooktheory scraper for Taylor Swift...
+Found existing artist: Taylor Swift (ID: 1)
+Searching for Taylor Swift songs at https://www.hooktheory.com/theorytab/artists/t/taylor-swift
+Found 236 song URLs
+
+[1/50] Processing https://www.hooktheory.com/theorytab/view/taylor-swift/love-story
+  Title: Love Story
+  Key: D major
+  Roman numerals: 8
+  Created new song (ID: 1)
+
+[2/50] Processing https://www.hooktheory.com/theorytab/view/taylor-swift/shake-it-off
+  Title: Shake It Off
+  Key: G major
+  Roman numerals: 4
+  Created new song (ID: 2)
+  ...
+
+============================================================
+Scraping complete!
+  Created: 45 songs
+  Updated: 0 songs
+  Skipped: 5 songs
+  Errors: 0 songs
+============================================================
+```
+
+**Note**: This scraper requires Selenium and Chrome/Chromium. See [HOOKTHEORY_SCRAPER.md](HOOKTHEORY_SCRAPER.md) for setup instructions.
+
+### Scrape Taylor Swift Tabs from UltimateGuitar
+
+The application also includes a built-in scraper for Taylor Swift chord tabs from UltimateGuitar (referenced in documentation but not yet implemented):
 
 ```bash
 # Basic scrape (respects 1s rate limit)
@@ -143,7 +195,15 @@ Overall analytics computed: songs=45 progressions=238 unique_chords=52
 
 ### Dataset Caveats
 
-- **Source**: Currently configured for Taylor Swift tabs from UltimateGuitar
+#### Hooktheory
+- **Source**: Hooktheory TheoryTab database with community-submitted chord progressions
+- **Format**: Roman numeral notation (I, ii, iii, IV, V, vi, vii°)
+- **Rate Limiting**: Default 2 seconds between requests (configurable with `--sleep`)
+- **Requirements**: Requires Selenium with Chrome/Chromium for JavaScript rendering
+- **Legal**: Respect Hooktheory's terms of service and rate limits
+
+#### UltimateGuitar (if implemented)
+- **Source**: User-submitted chord tabs from UltimateGuitar
 - **Rate Limiting**: Default 1 second between requests (configurable with `--sleep`)
 - **Duplicates**: Multiple versions of the same song may exist with different chord interpretations
 - **Quality**: Tab quality varies based on user submissions; some tabs may be incomplete or inaccurate
