@@ -1,0 +1,40 @@
+{% macro datetime_text(dt) -%}
+  {%- if dt -%}
+    {{ dt.strftime('%Y-%m-%d %H:%M UTC') }}
+  {%- else -%}
+    —
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro bar_table(items, label_header) -%}
+  {% if not items %}
+    <div class="muted">No data.</div>
+  {% else %}
+    <table class="data-table sortable">
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>{{ label_header }}</th>
+          <th class="num">Count</th>
+          <th class="num">Share</th>
+          <th>Viz</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr>
+            <td class="num muted" data-sort="{{ loop.index }}">{{ loop.index }}</td>
+            <td class="wrap"><span class="mono">{{ item.label }}</span></td>
+            <td class="num" data-sort="{{ item.count }}">{{ item.count }}</td>
+            <td class="num" data-sort="{{ item.pct }}">{{ '%.1f'|format(item.pct) }}%</td>
+            <td>
+              <div class="bar-wrap">
+                <div class="bar" style="width: {{ item.bar_pct }}%"></div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{%- endmacro %}
