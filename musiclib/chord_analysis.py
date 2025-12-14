@@ -10,6 +10,7 @@ _NOTE_RE = re.compile(r"^\s*([A-Ga-g])\s*([#b♯♭]?)\s*(.*)$")
 _CHORD_CHORD_RE = re.compile(
     r"\[ch\]([^\[]*?)\[/ch\]", re.IGNORECASE
 )
+_ROMAN_NUMERAL_RE = re.compile(r"^[#b♯♭]?[IiVv]+[°ø+]?(\d+)?(/[IiVv]+)?$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +106,10 @@ def _normalize_bass_note(note: str) -> str:
     return f"{root}{accidental}"
 
 
+def _normalize_roman_numeral(text: str) -> str:
+    return text.strip().replace("♯", "#").replace("♭", "b")
+
+
 def extract_chords_from_raw_tab(raw_tab: str) -> list[str]:
     """Extract all chords from raw tab text."""
     chords = [
@@ -115,26 +120,36 @@ def extract_chords_from_raw_tab(raw_tab: str) -> list[str]:
     return unique
 
 
-def extract_chords_from_lines(lines: Sequence[str]) -> list[list[str]]:
+def extract_chords_from_lines(
+    lines: Sequence[str],
+    allow_roman_numerals: bool = False,
+) -> list[list[str]]:
     """Extract chords from each line of tab text.
-    
+
     Returns a list of chord lists, one per line.
     """
     result: list[list[str]] = []
-    
+
     for line in lines:
         chords: list[str] = []
-        # Look for chord symbols in the line
         for token in re.split(r"\s+", line):
+            token = token.strip()
             if not token:
                 continue
+
+            if allow_roman_numerals:
+                roman = _normalize_roman_numeral(token)
+                if _ROMAN_NUMERAL_RE.match(roman):
+                    chords.append(roman)
+                    continue
+
             norm = normalize_chord_symbol(token)
-            # Check if this token looks like a chord
             if norm != token or _NOTE_RE.match(token):
                 if norm:
                     chords.append(norm)
+
         result.append(chords)
-    
+
     return result
 
 
@@ -177,25 +192,30 @@ def detect_key_changes(progressions: Sequence[ChordProgression]) -> list[int]:
 def extract_progressions_by_line(
     lines: Sequence[str],
     min_chords_per_line: int = 1,
+    allow_roman_numerals: bool = False,
 ) -> list[ChordProgression]:
     """Extract chord progressions from lines (one progression per line).
-    
+
     Args:
         lines: List of tab lines
         min_chords_per_line: Minimum chords needed per line to include it
-    
+        allow_roman_numerals: Treat valid Roman numerals (e.g. "vi", "V7") as chords
+
     Returns:
         List of ChordProgression objects
     """
     progressions: list[ChordProgression] = []
-    
-    chords_by_line = extract_chords_from_lines(lines)
-    
+
+    chords_by_line = extract_chords_from_lines(
+        lines,
+        allow_roman_numerals=allow_roman_numerals,
+    )
+
     for chord_list in chords_by_line:
         if len(chord_list) >= min_chords_per_line:
             prog = ChordProgression(chords=tuple(chord_list))
             progressions.append(prog)
-    
+
     return progressions
 
 
@@ -205,28 +225,41 @@ def analyze_song(
     artist_id: int,
     album_id: int | None,
     lines: Sequence[str],
+    tab_type: str | None = None,
 ) -> ChordAnalysisResult:
     """Analyze a song's chord structure.
-    
+
     Args:
         song_id: Database song ID
         song_title: Song title
         artist_id: Artist ID
         album_id: Album ID (if any)
         lines: Parsed tab lines
-    
+        tab_type: Optional tab type hint (e.g. "roman_numerals")
+
     Returns:
         ChordAnalysisResult with analysis data
     """
-    progressions = extract_progressions_by_line(lines)
-    
+    if tab_type == "roman_numerals":
+        chords: list[str] = []
+        for line in lines:
+            token = _normalize_roman_numeral(line)
+            if token and _ROMAN_NUMERAL_RE.match(token):
+                chords.append(token)
+
+        progressions: list[ChordProgression] = []
+        if chords:
+            progressions.append(ChordProgression(chords=tuple(chords)))
+    else:
+        progressions = extract_progressions_by_line(lines)
+
     all_chords: list[str] = []
     for prog in progressions:
         all_chords.extend(prog.chords)
-    
+
     unique_chords = sorted(set(all_chords))
     chord_freq = dict(Counter(all_chords))
-    
+
     return ChordAnalysisResult(
         song_id=song_id,
         song_title=song_title,

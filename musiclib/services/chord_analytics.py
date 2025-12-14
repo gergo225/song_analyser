@@ -62,6 +62,7 @@ def compute_and_cache_song_analytics(
         artist_id=song.artist_id,
         album_id=song.album_id,
         lines=lines,
+        tab_type=song.tab_type,
     )
     
     # Store result in cache
