@@ -106,7 +106,7 @@ def _normalize_bass_note(note: str) -> str:
 
 
 def extract_chords_from_raw_tab(raw_tab: str) -> list[str]:
-    """Extract all chords from raw tab text (UltimateGuitar format)."""
+    """Extract all chords from raw tab text."""
     chords = [
         normalize_chord_symbol(m.group(1))
         for m in _CHORD_CHORD_RE.finditer(raw_tab)
