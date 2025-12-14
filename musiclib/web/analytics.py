@@ -132,6 +132,55 @@ def index() -> str:
     )
 
 
+@analytics_bp.get("/songs")
+def songs() -> str:
+    rows = db.session.execute(
+        select(Song, Artist, Album)
+        .join(Artist, Song.artist_id == Artist.id)
+        .outerjoin(Album, Song.album_id == Album.id)
+        .order_by(Song.title)
+    ).all()
+
+    songs_list: list[Song] = [r[0] for r in rows]
+    metadata: dict[int, tuple[Artist, Album | None]] = {
+        r[0].id: (r[1], r[2]) for r in rows
+    }
+
+    if songs_list:
+        song_ids = [s.id for s in songs_list]
+        cached_songs = db.session.execute(
+            select(CachedAnalyticsMetadata).where(
+                CachedAnalyticsMetadata.subject_type == "song",
+                CachedAnalyticsMetadata.metric == "chord_analytics.song",
+                CachedAnalyticsMetadata.subject_id.in_(song_ids),
+            )
+        ).scalars().all()
+    else:
+        cached_songs = []
+
+    cached_by_song_id = {m.subject_id: m for m in cached_songs}
+
+    song_rows: list[dict[str, Any]] = []
+    for song in songs_list:
+        artist, album = metadata.get(song.id, (None, None))
+        cached = cached_by_song_id.get(song.id)
+        payload_data = _safe_json_loads(cached.payload) if cached else {}
+
+        song_rows.append(
+            {
+                "song": song,
+                "artist": artist,
+                "album": album,
+                "unique_chords": len(payload_data.get("unique_chords", [])),
+                "progressions": len(payload_data.get("progressions", [])),
+                "computed_at": cached.computed_at_utc if cached else None,
+                "has_analytics": cached is not None,
+            }
+        )
+
+    return render_template("analytics/songs.html", song_rows=song_rows)
+
+
 @analytics_bp.get("/albums")
 def albums() -> str:
     rows = db.session.execute(

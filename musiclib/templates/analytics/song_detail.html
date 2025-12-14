@@ -7,10 +7,9 @@
   <div class="page-header">
     <div>
       <div class="muted">
+        <a href="{{ url_for('analytics.songs') }}">Songs</a>
         {% if album %}
-          <a href="{{ url_for('analytics.album_detail', album_id=album.id) }}">{{ album.title }}</a> /
-        {% else %}
-          <a href="{{ url_for('analytics.albums') }}">Albums</a> /
+          / <a href="{{ url_for('analytics.album_detail', album_id=album.id) }}">{{ album.title }}</a>
         {% endif %}
       </div>
       <h1>{{ song.title }}</h1>

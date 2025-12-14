@@ -218,3 +218,43 @@ code {
   height: 10px;
   background: #1d4ed8;
 }
+
+.songs-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 600px) {
+  .songs-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.song-search-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--card-bg);
+  color: var(--fg);
+  min-width: 250px;
+}
+
+.song-search-input:focus {
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.1);
+}
+
+.song-title-cell {
+  font-weight: 500;
+}
+
+.album-cell {
+  color: var(--muted);
+  font-size: 14px;
+}
