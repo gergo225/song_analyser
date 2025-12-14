@@ -15,6 +15,7 @@
       <h1>{{ song.title }}</h1>
       <div class="muted">
         {{ artist.name if artist else '—' }}
+        {% if song.key %}· key {{ song.key }}{% endif %}
         {% if computed_at %}· computed {{ datetime_text(computed_at) }}{% endif %}
       </div>
       {% if song.source_url %}

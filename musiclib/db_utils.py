@@ -22,6 +22,7 @@ def ensure_sqlite_schema() -> None:
     existing = {col["name"] for col in inspector.get_columns("songs")}
 
     desired = {
+        "key": "VARCHAR(50)",
         "source": "VARCHAR(50)",
         "source_url": "VARCHAR(1024)",
         "tab_type": "VARCHAR(50)",
