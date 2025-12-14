@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from musiclib import create_app
 from musiclib.db_utils import init_db
+from musiclib.scrapers.hooktheory import HooktheoryScraper
 from musiclib.services.chord_analytics import (
     compute_and_cache_album_analytics,
     compute_and_cache_overall_analytics,
@@ -46,11 +47,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--force", action="store_true", help="Recompute even if cached"
     )
 
+    hooktheory_parser = subparsers.add_parser(
+        "scrape-hooktheory-taylor-swift",
+        help="Scrape Taylor Swift songs from Hooktheory",
+    )
+    hooktheory_parser.add_argument(
+        "--limit", type=int, default=None, help="Limit number of songs to scrape"
+    )
+    hooktheory_parser.add_argument(
+        "--sleep", type=float, default=2.0, help="Sleep time between requests (seconds)"
+    )
+    hooktheory_parser.add_argument(
+        "--force", action="store_true", help="Re-scrape existing songs"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "init-db":
         with app.app_context():
             init_db()
+        return 0
+
+    if args.command == "scrape-hooktheory-taylor-swift":
+        with app.app_context():
+            scraper = HooktheoryScraper(sleep_time=args.sleep)
+            scraper.scrape_taylor_swift(limit=args.limit, force=args.force)
         return 0
 
     if args.command == "compute-chord-analytics":
