@@ -229,22 +229,61 @@ class UltimateGuitarScraper:
 
 
 def parse_ug_wiki_tab_to_lines(raw_content: str) -> list[str]:
+    soup = BeautifulSoup(raw_content, "html.parser")
+    chord_spans = soup.find_all("span", attrs={"data-name": True})
+    
+    if chord_spans:
+        for br in soup.find_all("br"):
+            br.replace_with("\n")
+        
+        lines: list[str] = []
+        current_line_chords: list[str] = []
+        
+        def extract_chords_recursive(element):
+            if hasattr(element, "children"):
+                for child in element.children:
+                    if child.name == "span" and child.get("data-name"):
+                        chord = child.get("data-name", "").strip()
+                        if chord:
+                            current_line_chords.append(chord)
+                    elif isinstance(child, str):
+                        if "\n" in child:
+                            for part in child.split("\n"):
+                                if current_line_chords:
+                                    lines.append(" ".join(current_line_chords))
+                                    current_line_chords.clear()
+                    else:
+                        extract_chords_recursive(child)
+        
+        extract_chords_recursive(soup)
+        
+        if current_line_chords:
+            lines.append(" ".join(current_line_chords))
+        
+        return [line for line in lines if line.strip()]
+    
     lines: list[str] = []
-
     for line in raw_content.splitlines():
         cleaned = _TAB_TAG_RE.sub("", line)
         cleaned = _CH_TAG_RE.sub(lambda m: m.group(1), cleaned)
         cleaned = cleaned.strip()
-
-        if not cleaned:
-            continue
-
-        lines.append(cleaned)
-
+        if cleaned:
+            lines.append(cleaned)
     return lines
 
 
 def extract_normalized_chords(raw_content: str) -> list[str]:
+    soup = BeautifulSoup(raw_content, "html.parser")
+    chord_spans = soup.find_all("span", attrs={"data-name": True})
+    
+    if chord_spans:
+        chords = [
+            _normalize_chord_symbol(span.get("data-name", ""))
+            for span in chord_spans
+        ]
+        unique = sorted({c for c in chords if c})
+        return unique
+    
     chords = [
         _normalize_chord_symbol(m.group(1))
         for m in _CH_TAG_RE.finditer(raw_content)
