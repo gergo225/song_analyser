@@ -206,9 +206,10 @@ class HooktheoryScraper:
             if elements:
                 key_text = elements[0].text_content()
                 if key_text:
-                    normalized = self._normalize_key(key_text)
-                    if normalized:
-                        return normalized
+                    # Extract just the key part from the text to be safe
+                    key_match = re.search(r"\b([A-G][#b]?\s*(?:major|minor|maj|min)?)\b", key_text, re.IGNORECASE)
+                    if key_match:
+                        return self._normalize_key(key_match.group(1))
         except Exception as e:
             print(f"Warning: Error using XPath for key extraction: {e}")
 
