@@ -196,6 +196,19 @@ class HooktheoryScraper:
         return ""
 
     def _extract_key(self, soup: BeautifulSoup) -> str:
+        # Check the specific tab-controls structure first (bug fix)
+        tab_controls = soup.find("div", class_="tab-controls")
+        if tab_controls:
+            control_div = tab_controls.find("div", class_="div-control-with-label")
+            if control_div:
+                # Look for key text within this specific structure
+                key_text = control_div.get_text(strip=True)
+                if key_text:
+                    # Extract just the key part from the text
+                    key_match = re.search(r"\b([A-G][#b]?\s*(?:major|minor|maj|min)?)\b", key_text, re.IGNORECASE)
+                    if key_match:
+                        return self._normalize_key(key_match.group(1))
+        
         key_indicators = [
             ("meta", {"name": "key"}),
             ("span", {"class": "key"}),
