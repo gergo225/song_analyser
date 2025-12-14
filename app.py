@@ -13,9 +13,6 @@ from musiclib.services.chord_analytics import (
     compute_and_cache_overall_analytics,
     compute_and_cache_song_analytics,
 )
-from musiclib.services.ultimate_guitar_sync import (
-    scrape_taylor_swift_chords_to_db,
-)
 
 load_dotenv()
 
@@ -28,18 +25,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     subparsers.add_parser("run", help="Run the development server (default)")
     subparsers.add_parser("init-db", help="Create SQLite database tables")
-
-    scrape_parser = subparsers.add_parser(
-        "scrape-ug-taylor-swift",
-        help="Scrape Taylor Swift chord tabs from UltimateGuitar into SQLite",
-    )
-    scrape_parser.add_argument("--max-pages", type=int, default=None)
-    scrape_parser.add_argument("--limit", type=int, default=None)
-    scrape_parser.add_argument("--sleep", dest="sleep_seconds", type=float, default=1.0)
-    scrape_parser.add_argument("--force", action="store_true")
-    scrape_parser.add_argument(
-        "--no-analytics", action="store_true", help="Skip analytics computation"
-    )
 
     analytics_parser = subparsers.add_parser(
         "compute-chord-analytics",
@@ -66,17 +51,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "init-db":
         with app.app_context():
             init_db()
-        return 0
-
-    if args.command == "scrape-ug-taylor-swift":
-        with app.app_context():
-            scrape_taylor_swift_chords_to_db(
-                max_pages=args.max_pages,
-                limit=args.limit,
-                sleep_seconds=args.sleep_seconds,
-                force=args.force,
-                compute_analytics=not args.no_analytics,
-            )
         return 0
 
     if args.command == "compute-chord-analytics":
