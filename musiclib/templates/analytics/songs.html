@@ -22,6 +22,7 @@
       <tr>
         <th class="num">ID</th>
         <th>Song Title</th>
+        <th>Key</th>
         <th>Artist</th>
         <th>Album</th>
         <th class="num">Unique chords</th>
@@ -35,6 +36,9 @@
           <td class="num" data-sort="{{ row.song.id }}">{{ row.song.id }}</td>
           <td class="song-title-cell">
             <a href="{{ url_for('analytics.song_detail', song_id=row.song.id) }}">{{ row.song.title }}</a>
+          </td>
+          <td data-sort="{{ row.song.key or '' }}">
+            {% if row.song.key %}{{ row.song.key }}{% else %}<span class="muted">—</span>{% endif %}
           </td>
           <td>{{ row.artist.name if row.artist else '—' }}</td>
           <td class="album-cell">

@@ -61,6 +61,8 @@ class Song(db.Model):
     title = db.Column(db.String(255), nullable=False, index=True)
     track_number = db.Column(db.Integer, nullable=True)
 
+    key = db.Column(db.String(50), nullable=True)
+
     source = db.Column(db.String(50), nullable=True, index=True)
     source_url = db.Column(db.String(1024), nullable=True, index=True)
     tab_type = db.Column(db.String(50), nullable=True, index=True)

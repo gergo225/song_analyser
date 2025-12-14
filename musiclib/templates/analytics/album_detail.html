@@ -61,6 +61,7 @@
         <tr>
           <th class="num">Track</th>
           <th>Title</th>
+          <th>Key</th>
           <th class="num">Progressions</th>
           <th class="num">Unique chords</th>
           <th>Computed</th>
@@ -72,6 +73,9 @@
             <td class="num" data-sort="{{ row.song.track_number or 0 }}">{{ row.song.track_number or '—' }}</td>
             <td>
               <a href="{{ url_for('analytics.song_detail', song_id=row.song.id) }}">{{ row.song.title }}</a>
+            </td>
+            <td data-sort="{{ row.song.key or '' }}">
+              {% if row.song.key %}{{ row.song.key }}{% else %}<span class="muted">—</span>{% endif %}
             </td>
             <td class="num" data-sort="{{ row.progressions }}">
               {% if row.has_analytics %}{{ row.progressions }}{% else %}<span class="muted">—</span>{% endif %}
